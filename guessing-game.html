@@ -3,47 +3,660 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة التخمين</title>
+    <title>لعبة التخمين - النسخة المحسنة</title>
     <style>
         :root {
             --bg: #1A1A2E;
             --accent: #6A0DAD;
             --play: #FF7F11;
             --text: #EAEAEA;
+            --danger: #E74C3C;
+            --success: #27AE60;
         }
-        body { background-color: var(--bg); color: var(--text); font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .group { border: 2px solid var(--accent); padding: 15px; margin: 15px auto; border-radius: 12px; max-width: 400px; }
-        button { background-color: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin: 5px; }
-        .play-btn { background-color: var(--play); font-size: 1.2em; padding: 15px 40px; border-radius: 50px; }
-        img { max-width: 100px; height: 100px; object-fit: cover; margin: 5px; border-radius: 5px; }
-        #gameScreen { position: fixed; top:0; left:0; width:100%; height:100%; background: var(--bg); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:1000; }
+        
+        * { box-sizing: border-box; }
+        
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            margin: 0 0 20px 0;
+            font-size: 2.5em;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(106, 13, 173, 0.4); }
+        
+        button.play-btn {
+            background-color: var(--play);
+            font-size: 1.2em;
+            padding: 15px 40px;
+            border-radius: 50px;
+        }
+        
+        button.danger { background-color: var(--danger); }
+        button.success { background-color: var(--success); }
+        
+        .group {
+            border: 2px solid var(--accent);
+            padding: 20px;
+            margin: 15px auto;
+            border-radius: 12px;
+            max-width: 500px;
+            background: rgba(106, 13, 173, 0.1);
+            position: relative;
+        }
+        
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .group h3 {
+            margin: 0;
+            font-size: 1.5em;
+            flex: 1;
+        }
+        
+        .group-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .group-actions button {
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+        
+        .images-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+            min-height: 100px;
+            align-content: start;
+        }
+        
+        .image-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .image-item .delete-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .image-item:hover .delete-btn { opacity: 1; }
+        
+        .stats {
+            font-size: 0.9em;
+            color: #AAA;
+            margin-top: 10px;
+        }
+        
+        #gameScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--bg) 0%, #2A2A4E 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        #gameScreen.active { display: flex; }
+        
+        .game-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            max-width: 90%;
+        }
+        
+        #displayImg {
+            max-width: 90vw;
+            max-height: 70vh;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .game-buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .game-buttons button {
+            padding: 15px 40px;
+            font-size: 1.1em;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: var(--bg);
+            border: 2px solid var(--accent);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            margin: 20px auto;
+        }
+        
+        .modal-content h2 {
+            margin-top: 0;
+        }
+        
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            margin: 15px 0;
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+            background: rgba(106, 13, 173, 0.2);
+            color: var(--text);
+            font-size: 1em;
+        }
+        
+        .modal-content input:focus {
+            outline: none;
+            border-color: var(--play);
+            background: rgba(255, 127, 17, 0.1);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+        }
+        
+        input[type="file"] { display: none; }
+        
+        #groupsContainer { margin: 20px auto; }
+        
+        .info-box {
+            background: rgba(255, 127, 17, 0.1);
+            border-left: 4px solid var(--play);
+            padding: 15px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: right;
+            border-radius: 5px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab-buttons button {
+            padding: 10px 20px;
+            background: rgba(106, 13, 173, 0.3);
+            border: 2px solid var(--accent);
+        }
+        
+        .tab-buttons button.active {
+            background: var(--accent);
+            border-color: var(--play);
+        }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(106, 13, 173, 0.2);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .checkbox-item:hover {
+            background: rgba(106, 13, 173, 0.4);
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .checkbox-item label {
+            cursor: pointer;
+            margin: 0;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .mode-btn {
+            padding: 12px 20px;
+            background: rgba(106, 13, 173, 0.3);
+            border: 2px solid var(--accent);
+            border-radius: 8px;
+        }
+        
+        .mode-btn.active {
+            background: var(--accent);
+            border-color: var(--play);
+        }
+        
+        .mode-description {
+            text-align: right;
+            color: #AAA;
+            font-size: 0.9em;
+            margin: 10px 0;
+        }
+        
+        .images-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+        }
+        
+        .gallery-item {
+            cursor: pointer;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .gallery-item:hover {
+            transform: scale(1.05);
+            border-color: var(--play);
+        }
     </style>
 </head>
 <body>
-
     <h1>🎮 لعبة التخمين</h1>
-    <button onclick="addGroup()">+ إضافة مجموعة جديدة</button>
-    <button class="play-btn" onclick="playRandom()">ابدأ اللعبة</button>
     
-    <div id="groupsContainer"></div>
+    <div class="tab-buttons">
+        <button class="active" onclick="switchTab('manage')">📁 إدارة المجموعات</button>
+        <button onclick="switchTab('play')">🎮 اللعبة</button>
+        <button onclick="switchTab('share')">📤 المشاركة</button>
+    </div>
 
+    <!-- Tab: إدارة المجموعات -->
+    <div id="manage" class="tab-content active">
+        <div class="info-box">
+            ℹ️ أنت المالك والمنشئ - قم بإنشاء مجموعات وأضف صوراً من جهازك
+        </div>
+        
+        <div class="controls">
+            <button onclick="openAddGroupModal()">➕ مجموعة جديدة</button>
+        </div>
+        
+        <div id="groupsContainer"></div>
+    </div>
+
+    <!-- Tab: اللعبة -->
+    <div id="play" class="tab-content">
+        <div class="info-box">
+            🎯 اختر طريقة اللعب: عشوائي من مجموعات محددة أو اختر صورة بنفسك
+        </div>
+        
+        <!-- اختيار النمط -->
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="setGameMode('random')">🎲 عشوائي</button>
+            <button class="mode-btn" onclick="setGameMode('manual')">👆 اختيار يدوي</button>
+        </div>
+        
+        <!-- نمط العشوائي -->
+        <div id="randomMode">
+            <div class="mode-description">اختر المجموعات التي تريد اللعب منها</div>
+            <div id="groupCheckboxes" class="checkbox-group"></div>
+            <div class="controls">
+                <button class="play-btn" onclick="selectAllGroups()">✅ تحديد الكل</button>
+                <button onclick="deselectAllGroups()">❌ إلغاء التحديد</button>
+                <button class="play-btn" onclick="playRandom()">ابدأ اللعبة</button>
+            </div>
+            
+            <div id="randomStats" style="margin-top: 20px; font-size: 1.1em;">
+                <p id="totalImages">📸 إجمالي الصور: 0</p>
+                <p id="groupCount">📁 عدد المجموعات: 0</p>
+            </div>
+        </div>
+        
+        <!-- نمط الاختيار اليدوي -->
+        <div id="manualMode" style="display: none;">
+            <div class="mode-description">اختر صورة واحدة من جميع الصور</div>
+            <div id="imagesList" class="images-gallery"></div>
+        </div>
+    </div>
+
+    <!-- Tab: المشاركة -->
+    <div id="share" class="tab-content">
+        <div class="info-box">
+            📤 شارك مجموعاتك مع أصدقائك! الملف يعمل بدون اتصال بالإنترنت
+        </div>
+        
+        <div class="controls">
+            <button class="success" onclick="exportData()">📥 تصدير جميع المجموعات</button>
+            <button onclick="document.getElementById('importFile').click()">📤 استيراد مجموعات</button>
+            <input type="file" id="importFile" accept=".json" onchange="importData(event)">
+            <button class="danger" onclick="clearAllData()">🗑️ حذف جميع البيانات</button>
+        </div>
+        
+        <div id="shareInfo" style="margin-top: 30px;"></div>
+    </div>
+
+    <!-- شاشة اللعب -->
     <div id="gameScreen">
-        <h2 id="imgName">تخمين الصورة!</h2>
-        <img id="displayImg" src="" style="max-width:90%; height:auto; max-height:60%;">
-        <button onclick="closeGame()" style="background:red;">تم (الرجوع)</button>
+        <div class="game-content">
+            <h2>🖼️ تخمين الصورة!</h2>
+            <img id="displayImg" src="" alt="صورة اللعبة">
+            <div class="game-buttons">
+                <button class="success" onclick="nextRound()">✅ نعم / تم</button>
+                <button class="danger" onclick="nextRound()">❌ لا / التالية</button>
+                <button onclick="closeGame()" style="background: #666;">🔙 الرجوع</button>
+            </div>
+            <p id="roundInfo">اضغط على الزر بعد التخمين</p>
+        </div>
+    </div>
+
+    <!-- Modal: إضافة مجموعة -->
+    <div id="addGroupModal" class="modal">
+        <div class="modal-content">
+            <h2>مجموعة جديدة</h2>
+            <input type="text" id="groupNameInput" placeholder="أدخل اسم المجموعة" onkeypress="if(event.key==='Enter') createGroup()">
+            <div class="modal-buttons">
+                <button class="success" onclick="createGroup()">✅ إنشاء</button>
+                <button class="danger" onclick="closeAddGroupModal()">❌ إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: تعديل اسم المجموعة -->
+    <div id="editGroupModal" class="modal">
+        <div class="modal-content">
+            <h2>تعديل اسم المجموعة</h2>
+            <input type="text" id="editGroupNameInput" placeholder="أدخل الاسم الجديد" onkeypress="if(event.key==='Enter') saveGroupName()">
+            <div class="modal-buttons">
+                <button class="success" onclick="saveGroupName()">✅ حفظ</button>
+                <button class="danger" onclick="closeEditGroupModal()">❌ إلغاء</button>
+            </div>
+        </div>
     </div>
 
     <script>
         let data = JSON.parse(localStorage.getItem('myGameData')) || {};
+        let currentEditingGroup = null;
+        let currentGameImages = [];
+        let currentGameIndex = 0;
+        let selectedGroups = new Set();
+        let gameMode = 'random';
 
-        function addGroup() {
-            let name = prompt("اسم المجموعة:");
-            if (name) { data[name] = []; saveAndRender(); }
+        // ===== إدارة التبويبات =====
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            
+            document.querySelectorAll('.tab-buttons button').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tabName === 'play') {
+                renderGameMode();
+                updatePlayStats();
+            }
+            if (tabName === 'share') updateShareInfo();
+        }
+
+        // ===== نمط اللعبة =====
+        function setGameMode(mode) {
+            gameMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGameMode();
+        }
+
+        function renderGameMode() {
+            if (gameMode === 'random') {
+                document.getElementById('randomMode').style.display = 'block';
+                document.getElementById('manualMode').style.display = 'none';
+                renderGroupCheckboxes();
+                updatePlayStats();
+            } else {
+                document.getElementById('randomMode').style.display = 'none';
+                document.getElementById('manualMode').style.display = 'block';
+                renderImagesList();
+            }
+        }
+
+        function renderGroupCheckboxes() {
+            let container = document.getElementById('groupCheckboxes');
+            container.innerHTML = '';
+            
+            for (let group in data) {
+                let div = document.createElement('div');
+                div.className = 'checkbox-item';
+                
+                let isChecked = selectedGroups.has(group);
+                
+                div.innerHTML = `
+                    <input type="checkbox" id="group_${group}" ${isChecked ? 'checked' : ''} onchange="toggleGroup('${group}')">
+                    <label for="group_${group}">${group} (${data[group].length})</label>
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        function toggleGroup(groupName) {
+            if (selectedGroups.has(groupName)) {
+                selectedGroups.delete(groupName);
+            } else {
+                selectedGroups.add(groupName);
+            }
+            updatePlayStats();
+        }
+
+        function selectAllGroups() {
+            selectedGroups = new Set(Object.keys(data));
+            renderGroupCheckboxes();
+            updatePlayStats();
+        }
+
+        function deselectAllGroups() {
+            selectedGroups.clear();
+            renderGroupCheckboxes();
+            updatePlayStats();
+        }
+
+        function renderImagesList() {
+            let container = document.getElementById('imagesList');
+            container.innerHTML = '';
+            
+            let allImages = [];
+            for (let group in data) {
+                data[group].forEach(img => {
+                    allImages.push({ src: img, group: group });
+                });
+            }
+            
+            if (allImages.length === 0) {
+                container.innerHTML = '<p style="grid-column: 1/-1; color: #888;">لا توجد صور</p>';
+                return;
+            }
+            
+            allImages.forEach((item, idx) => {
+                let div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `<img src="${item.src}" alt="صورة" onclick="playManualImage(${idx})">`;
+                container.appendChild(div);
+            });
+        }
+
+        // ===== إدارة المجموعات =====
+        function openAddGroupModal() {
+            document.getElementById('addGroupModal').classList.add('active');
+            document.getElementById('groupNameInput').focus();
+        }
+
+        function closeAddGroupModal() {
+            document.getElementById('addGroupModal').classList.remove('active');
+            document.getElementById('groupNameInput').value = '';
+        }
+
+        function createGroup() {
+            let name = document.getElementById('groupNameInput').value.trim();
+            if (!name) {
+                alert('الرجاء إدخال اسم المجموعة');
+                return;
+            }
+            if (data[name]) {
+                alert('المجموعة موجودة بالفعل!');
+                return;
+            }
+            data[name] = [];
+            saveAndRender();
+            closeAddGroupModal();
+        }
+
+        function openEditGroupModal(groupName) {
+            currentEditingGroup = groupName;
+            document.getElementById('editGroupNameInput').value = groupName;
+            document.getElementById('editGroupModal').classList.add('active');
+            document.getElementById('editGroupNameInput').focus();
+        }
+
+        function closeEditGroupModal() {
+            document.getElementById('editGroupModal').classList.remove('active');
+        }
+
+        function saveGroupName() {
+            let newName = document.getElementById('editGroupNameInput').value.trim();
+            if (!newName) {
+                alert('الرجاء إدخال اسم صحيح');
+                return;
+            }
+            if (newName !== currentEditingGroup && data[newName]) {
+                alert('المجموعة موجودة بالفعل!');
+                return;
+            }
+            data[newName] = data[currentEditingGroup];
+            delete data[currentEditingGroup];
+            saveAndRender();
+            closeEditGroupModal();
+        }
+
+        function deleteGroup(groupName) {
+            if (confirm(`هل أنت متأكد من حذف المجموعة "${groupName}"؟`)) {
+                delete data[groupName];
+                selectedGroups.delete(groupName);
+                saveAndRender();
+            }
         }
 
         function addImage(groupName) {
             let input = document.createElement('input');
-            input.type = 'file'; input.multiple = true;
+            input.type = 'file';
+            input.multiple = true;
+            input.accept = 'image/*';
             input.onchange = e => {
                 for (let file of e.target.files) {
                     let reader = new FileReader();
@@ -57,30 +670,183 @@
             input.click();
         }
 
-        function playRandom() {
-            let allImages = [];
-            for (let group in data) { allImages = allImages.concat(data[group]); }
-            if (allImages.length === 0) { alert("أضف صوراً أولاً!"); return; }
-            let randomImg = allImages[Math.floor(Math.random() * allImages.length)];
-            document.getElementById('displayImg').src = randomImg;
-            document.getElementById('gameScreen').style.display = 'flex';
+        function deleteImage(groupName, index) {
+            data[groupName].splice(index, 1);
+            saveAndRender();
         }
 
-        function closeGame() { document.getElementById('gameScreen').style.display = 'none'; }
+        // ===== دورة اللعب =====
+        function playRandom() {
+            if (selectedGroups.size === 0) {
+                alert('الرجاء تحديد مجموعة واحدة على الأقل!');
+                return;
+            }
+            
+            let allImages = [];
+            for (let group of selectedGroups) {
+                allImages = allImages.concat(data[group]);
+            }
+            
+            if (allImages.length === 0) {
+                alert('المجموعات المحددة لا تحتوي على صور!');
+                return;
+            }
+            
+            currentGameImages = allImages;
+            nextRound();
+        }
+
+        function playManualImage(imageIndex) {
+            let allImages = [];
+            for (let group in data) {
+                allImages = allImages.concat(data[group]);
+            }
+            
+            if (imageIndex >= allImages.length) {
+                alert('الصورة غير موجودة!');
+                return;
+            }
+            
+            currentGameImages = [allImages[imageIndex]];
+            currentGameIndex = 0;
+            document.getElementById('displayImg').src = currentGameImages[0];
+            document.getElementById('gameScreen').classList.add('active');
+        }
+
+        function nextRound() {
+            if (currentGameImages.length === 0) {
+                closeGame();
+                return;
+            }
+            currentGameIndex = Math.floor(Math.random() * currentGameImages.length);
+            document.getElementById('displayImg').src = currentGameImages[currentGameIndex];
+            document.getElementById('gameScreen').classList.add('active');
+        }
+
+        function closeGame() {
+            document.getElementById('gameScreen').classList.remove('active');
+        }
+
+        // ===== المشاركة والاستيراد =====
+        function exportData() {
+            const dataStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `guessing-game-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (confirm('هل تريد دمج البيانات أم استبدالها؟\nنعم = دمج، لا = استبدال')) {
+                        // دمج
+                        for (let group in importedData) {
+                            if (data[group]) {
+                                data[group] = data[group].concat(importedData[group]);
+                            } else {
+                                data[group] = importedData[group];
+                            }
+                        }
+                    } else {
+                        // استبدال
+                        data = importedData;
+                        selectedGroups.clear();
+                    }
+                    saveAndRender();
+                    alert('تم استيراد البيانات بنجاح!');
+                } catch (err) {
+                    alert('خطأ في ملف الاستيراد!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ هل أنت متأكد من حذف جميع البيانات؟ لا يمكن التراجع!')) {
+                data = {};
+                selectedGroups.clear();
+                saveAndRender();
+            }
+        }
+
+        // ===== التحديثات =====
+        function updatePlayStats() {
+            let totalImages = 0;
+            let groupCount = selectedGroups.size;
+            
+            for (let group of selectedGroups) {
+                totalImages += data[group] ? data[group].length : 0;
+            }
+            
+            document.getElementById('totalImages').innerHTML = `📸 إجمالي الصور المختارة: <strong>${totalImages}</strong>`;
+            document.getElementById('groupCount').innerHTML = `📁 عدد المجموعات المختارة: <strong>${groupCount}</strong>`;
+        }
+
+        function updateShareInfo() {
+            let totalImages = 0;
+            let totalSize = 0;
+            for (let group in data) {
+                totalImages += data[group].length;
+                data[group].forEach(img => totalSize += img.length);
+            }
+            let sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+            
+            document.getElementById('shareInfo').innerHTML = `
+                <p>📊 إحصائيات البيانات:</p>
+                <ul style="text-align: right; display: inline-block;">
+                    <li>📁 المجموعات: ${Object.keys(data).length}</li>
+                    <li>📸 الصور: ${totalImages}</li>
+                    <li>💾 حجم البيانات: ${sizeMB} MB</li>
+                </ul>
+            `;
+        }
 
         function saveAndRender() {
             localStorage.setItem('myGameData', JSON.stringify(data));
             let container = document.getElementById('groupsContainer');
             container.innerHTML = '';
+            
+            if (Object.keys(data).length === 0) {
+                container.innerHTML = '<p style="color: #888; margin: 30px;">لا توجد مجموعات بعد. أنشئ مجموعة جديدة!</p>';
+                return;
+            }
+            
             for (let group in data) {
                 let div = document.createElement('div');
                 div.className = 'group';
-                div.innerHTML = `<h3>${group}</h3>
-                    <button onclick="addImage('${group}')">إضافة صورة</button>
-                    <div>${data[group].map(img => `<img src="${img}">`).join('')}</div>`;
+                
+                let imagesHTML = data[group].map((img, idx) => `
+                    <div class="image-item">
+                        <img src="${img}" alt="صورة">
+                        <button class="delete-btn" onclick="deleteImage('${group}', ${idx})">حذف</button>
+                    </div>
+                `).join('');
+                
+                div.innerHTML = `
+                    <div class="group-header">
+                        <h3>${group}</h3>
+                        <div class="group-actions">
+                            <button onclick="openEditGroupModal('${group}')" title="تعديل">✏️</button>
+                            <button class="danger" onclick="deleteGroup('${group}')" title="حذف">🗑️</button>
+                        </div>
+                    </div>
+                    <button onclick="addImage('${group}')">📸 إضافة صور</button>
+                    <div class="images-container">${imagesHTML || '<p style="color: #666;">لا توجد صور</p>'}</div>
+                    <div class="stats">📊 ${data[group].length} صورة</div>
+                `;
                 container.appendChild(div);
             }
         }
+
+        // تحميل البيانات في البداية
         saveAndRender();
     </script>
 </body>
